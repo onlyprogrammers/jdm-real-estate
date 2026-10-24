@@ -7,22 +7,28 @@ import { ArrowRight, BedDouble, Building2, Heart, MapPin, Menu, Search, ShieldCh
 import { BottomNav } from '@/components/bottom-nav'
 
 const localities = [
-  { name: 'DLF Phase 3', note: 'Close to Cyber City', tag: 'Near Cyber City', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=85' },
-  { name: 'Sector 56', note: 'Golf Course Road', tag: 'Metro connected', image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=85' },
-  { name: 'Sohna Road', note: 'Room to grow', tag: 'Family friendly', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=85' },
+  { name: 'DLF Phase 3', note: 'Close to Cyber City', tag: 'Near Cyber City', homes: '2.1K+ Homes', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=85' },
+  { name: 'Sector 56', note: 'Golf Course Road', tag: 'Metro connected', homes: '1.6K+ Homes', image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=85' },
+  { name: 'Sohna Road', note: 'Room to grow', tag: 'Family friendly', homes: '1.2K+ Homes', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=85' },
 ]
 
 const suggestions: { label: string; filters: Record<string, string> }[] = [
-  { label: 'Under ₹25k', filters: { maxPrice: '25000' } },
+  { label: 'Under ₹25K', filters: { maxPrice: '25000' } },
   { label: 'No brokerage', filters: { brokerage: 'owner' } },
-  { label: '1 RK / 1 BHK', filters: { bedrooms: '1' } },
-  { label: 'Move in now', filters: { immediate: 'true' } },
+  { label: '1 RK – 4 BHK', filters: { bedrooms: '1' } },
 ]
 
 type Listing = {
   id: string; title: string; locality: string; price: number; purpose: string; type: string
-  bedrooms?: number | null; area?: number | null; images?: string[] | null; verifiedAt?: string | null
+  bedrooms?: number | null; bathrooms?: number | null; area?: number | null; images?: string[] | null; verifiedAt?: string | null; demo?: boolean
 }
+
+const demoListings: Listing[] = [
+  { id: 'demo-sector-56-3bhk', title: '3 BHK Apartment', locality: 'Sector 56, Gurugram', price: 45000, purpose: 'rent', type: 'apartment', bedrooms: 3, bathrooms: 3, area: 1650, images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=700&q=80'], demo: true },
+  { id: 'demo-dlf-phase-3-2bhk', title: '2 BHK Apartment', locality: 'DLF Phase 3', price: 28000, purpose: 'rent', type: 'apartment', bedrooms: 2, bathrooms: 2, area: 1250, images: ['https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=700&q=80'], demo: true },
+  { id: 'demo-golf-course-4bhk', title: '4 BHK Builder Floor', locality: 'Golf Course Road', price: 85000, purpose: 'rent', type: 'builder-floor', bedrooms: 4, bathrooms: 4, area: 2400, images: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=700&q=80'], demo: true },
+  { id: 'demo-sohna-road-1bhk', title: '1 BHK Apartment', locality: 'Sohna Road', price: 18500, purpose: 'rent', type: 'apartment', bedrooms: 1, bathrooms: 1, area: 650, images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=700&q=80'], demo: true },
+]
 
 const money = (amount: number, purpose: string) => `₹${new Intl.NumberFormat('en-IN').format(amount)}${purpose === 'sale' ? '' : ' / month'}`
 
@@ -32,7 +38,7 @@ export function HomeScreen() {
   const [purpose, setPurpose] = useState('rent')
   const [menuOpen, setMenuOpen] = useState(false)
   const [listings, setListings] = useState<Listing[]>([])
-  const [listingsState, setListingsState] = useState<'loading' | 'ready' | 'unavailable'>('loading')
+  const [listingsState, setListingsState] = useState<'loading' | 'ready' | 'demo'>('loading')
   const [saved, setSaved] = useState<string[]>([])
 
   useEffect(() => {
@@ -41,10 +47,11 @@ export function HomeScreen() {
       .then(async (response) => {
         const data = await response.json()
         if (!active) return
-        setListings(Array.isArray(data.properties) ? data.properties : [])
-        setListingsState(response.ok ? 'ready' : 'unavailable')
+        const liveListings = Array.isArray(data.properties) ? data.properties as Listing[] : []
+        setListings(liveListings.length ? liveListings : demoListings)
+        setListingsState(response.ok && liveListings.length ? 'ready' : 'demo')
       })
-      .catch(() => { if (active) setListingsState('unavailable') })
+      .catch(() => { if (active) { setListings(demoListings); setListingsState('demo') } })
     try { setSaved(JSON.parse(localStorage.getItem('jdm:saved') || '[]')) } catch { setSaved([]) }
     const syncSaved = () => { try { setSaved(JSON.parse(localStorage.getItem('jdm:saved') || '[]')) } catch { setSaved([]) } }
     window.addEventListener('storage', syncSaved)
@@ -80,7 +87,7 @@ export function HomeScreen() {
         <header className="relative mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 sm:px-8 lg:px-10 lg:py-7">
           <Link href="/" className="flex items-center gap-3" aria-label="JDM Homes home">
             <span className="flex size-11 items-center justify-center rounded-full border border-[#9eaf2e]/70 text-[#b7d649] sm:size-[58px]"><Building2 size={23} strokeWidth={1.8} /></span>
-            <span><span className="block text-[19px] font-bold tracking-[-.055em] sm:text-2xl">JDM <span className="text-[#b7d649]">Homes</span></span><span className="hidden text-[10px] font-semibold uppercase tracking-[.12em] text-white/70 sm:block">Gurugram real estate experts</span></span>
+            <span><span className="block text-[19px] font-bold tracking-[-.055em] sm:text-2xl">JDM <span className="text-[#b7d649]">Homes</span></span><span className="block text-[8px] font-semibold uppercase tracking-[.1em] text-white/70 sm:text-[10px]">Gurugram real estate experts</span></span>
           </Link>
           <nav className="hidden items-center gap-7 text-sm font-semibold text-white/80 md:flex" aria-label="Main menu"><Link className="hover:text-[#d8ef78]" href="/search">Explore homes</Link><Link className="hover:text-[#d8ef78]" href="/post">List a property</Link><Link className="hover:text-[#d8ef78]" href="/profile">My account</Link><Link href="/login" className="rounded-xl border border-white/25 px-4 py-2.5 text-white hover:bg-white/10">Sign in</Link></nav>
           <div className="relative flex items-center gap-2"><Link href="/search" aria-label="Search homes" className="flex size-10 items-center justify-center rounded-full border border-[#a7bb34]/55 text-white hover:bg-white/10 sm:size-[54px]"><Search size={21} /></Link><button type="button" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} aria-controls="mobile-home-menu" onClick={() => setMenuOpen((open) => !open)} className="flex size-10 items-center justify-center rounded-full border border-[#a7bb34]/55 text-white hover:bg-white/10 md:hidden">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
@@ -94,9 +101,7 @@ export function HomeScreen() {
             <h1 className="max-w-[680px] text-[42px] font-medium leading-[.97] tracking-[-.055em] sm:text-6xl lg:text-[68px]">Find your corner<br className="hidden sm:block" /> of <span className="text-[#b7d649]">Gurugram.</span></h1>
             <p className="mt-5 max-w-[450px] text-sm leading-6 text-white/80 sm:text-base sm:leading-7">From a first room near Cyber City to a family home on Golf Course Road, start with the neighbourhood that feels right.</p>
           </div>
-          <div className="relative hidden min-h-[330px] lg:block" aria-hidden="true">
-            <span className="absolute bottom-0 right-[20%] h-[240px] w-[74%] rotate-[-7deg] overflow-hidden rounded-t-[120px] border border-white/15 bg-[url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1000&q=85')] bg-cover bg-center opacity-50 mix-blend-screen shadow-[0_0_90px_rgba(183,214,73,.12)]" />
-          </div>
+          <div className="hidden lg:block" aria-hidden="true" />
         </div>
       </section>
 
@@ -111,6 +116,7 @@ export function HomeScreen() {
           </form>
           <div className="hide-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1 sm:mt-4 sm:grid sm:grid-cols-4">
             {suggestions.map((item) => <Link key={item.label} href={`/search?${new URLSearchParams({ purpose, ...item.filters })}`} className="flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#e2e4df] bg-white px-3 text-[11px] font-semibold text-[#43534a] transition hover:border-[#b5c85b] hover:bg-[#f9fbed] sm:text-sm"><SlidersHorizontal size={15} className="hidden text-[#607c22] sm:block" />{item.label}</Link>)}
+            <Link href={`/search?${new URLSearchParams({ purpose })}`} className="flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#e2e4df] bg-white px-3 text-[11px] font-semibold text-[#43534a] transition hover:border-[#b5c85b] hover:bg-[#f9fbed] sm:text-sm"><SlidersHorizontal size={15} className="text-[#607c22]" />More Filters</Link>
           </div>
           <div className="mt-3 flex items-center gap-2 px-1 text-xs text-[#657168] sm:mt-4 sm:text-sm"><ShieldCheck size={17} className="shrink-0 text-[#66851e]" /> Local details that help you decide with confidence.</div>
         </div>
@@ -118,13 +124,13 @@ export function HomeScreen() {
 
       <section className="mx-auto max-w-[1360px] px-4 pt-10 sm:px-8 sm:pt-12 lg:px-10 lg:pt-10">
         <div className="flex items-end justify-between gap-4"><div><p className="font-mono text-[10px] font-bold uppercase tracking-[.2em] text-[#829c28]">Explore Gurugram</p><h2 className="mt-2 text-[27px] font-semibold leading-tight tracking-[-.045em] sm:text-3xl">Gurugram, by neighbourhood.</h2><p className="mt-2 text-sm text-[#69776e] sm:text-base">Explore the places people love to live in.</p></div><Link href="/search" className="hidden min-h-11 items-center gap-3 rounded-xl border border-[#9aaf37] px-4 text-sm font-bold text-[#284832] sm:inline-flex">View all areas <ArrowRight size={17} /></Link></div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3 sm:gap-4">{localities.map((place) => <Link href={`/search?q=${encodeURIComponent(place.name)}`} key={place.name} className="group relative min-h-[205px] overflow-hidden rounded-[19px] bg-[#d7d8cf] sm:min-h-[235px] lg:min-h-[280px]"><img src={place.image} alt={`Homes in ${place.name}`} className="absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-[1.045]" /><div className="absolute inset-0 bg-gradient-to-t from-[#071d16]/85 via-[#071d16]/15 to-transparent" /><span className="absolute right-3 top-3 rounded-full bg-[#104631]/95 px-3 py-1.5 text-[10px] font-bold text-white sm:right-4 sm:top-4 sm:text-xs">{place.tag}</span><div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5"><p className="text-xl font-bold tracking-[-.035em] sm:text-2xl">{place.name}</p><p className="mt-1 text-xs text-white/85 sm:text-sm">{place.note}</p></div></Link>)}</div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3 sm:gap-4">{localities.map((place) => <Link href={`/search?q=${encodeURIComponent(place.name)}`} key={place.name} className="group relative min-h-[205px] overflow-hidden rounded-[19px] bg-[#d7d8cf] sm:min-h-[235px] lg:min-h-[280px]"><img src={place.image} alt={`Homes in ${place.name}`} className="absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-[1.045]" /><div className="absolute inset-0 bg-gradient-to-t from-[#071d16]/85 via-[#071d16]/15 to-transparent" /><span className="absolute right-3 top-3 rounded-full bg-[#104631]/95 px-3 py-1.5 text-[10px] font-bold text-white sm:right-4 sm:top-4 sm:text-xs">{place.tag}</span><div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5"><p className="text-xl font-bold tracking-[-.035em] sm:text-2xl">{place.name}</p><p className="mt-1 text-xs text-white/85 sm:text-sm">{place.note}</p><span className="mt-2 inline-flex rounded-full border border-[#b7d649]/70 bg-[#062a20]/65 px-2.5 py-1 text-[10px] font-semibold text-white">{place.homes}</span></div></Link>)}</div>
         <Link href="/search" className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#dfe3da] bg-white text-sm font-bold text-[#3c5d35] sm:hidden">View all areas <ArrowRight size={16} /></Link>
       </section>
 
       <section className="mx-auto max-w-[1360px] px-4 pt-10 sm:px-8 sm:pt-12 lg:px-10">
-        <div className="flex items-end justify-between"><div><p className="font-mono text-[10px] font-bold uppercase tracking-[.2em] text-[#829c28]">New listed</p><h2 className="mt-2 text-2xl font-semibold tracking-[-.045em] sm:text-3xl">Recently added homes</h2></div><Link href="/search" className="inline-flex items-center gap-1 text-sm font-bold text-[#294931]">See all <ArrowRight size={16} /></Link></div>
-        {listingsState === 'loading' ? <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">{[0,1,2,3].map((item) => <div key={item} className="h-[260px] animate-pulse rounded-[17px] bg-[#e6e9df]" />)}</div> : listings.length ? <div className="hide-scrollbar mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">{listings.map((item) => <article key={item.id} className="group overflow-hidden rounded-[17px] border border-[#e3e6df] bg-white shadow-[0_5px_18px_rgba(29,46,35,.05)]"><Link href={`/property/${item.id}`} className="relative block h-[145px] overflow-hidden bg-[#e3e9dd] sm:h-[185px]">{item.images?.[0] ? <img src={item.images[0]} alt={item.title} className="size-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex size-full items-center justify-center text-[#72836e]"><Building2 size={34} strokeWidth={1.3} /></div>}<span className="absolute left-2 top-2 rounded-md bg-[#b7d649] px-2 py-1 text-[9px] font-bold uppercase text-[#263d25]">New</span>{item.verifiedAt && <span className="absolute bottom-2 left-2 rounded-md bg-white/95 px-2 py-1 text-[9px] font-bold text-[#315246]">Verified</span>}</Link><div className="p-3"><div className="flex items-start justify-between gap-1"><Link href={`/property/${item.id}`} className="line-clamp-1 text-sm font-bold leading-5">{item.title}</Link><button type="button" aria-label={saved.includes(item.id) ? 'Remove from shortlist' : 'Save to shortlist'} aria-pressed={saved.includes(item.id)} onClick={() => toggleSaved(item.id)} className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full text-[#315246] hover:bg-[#f1f5e5]"><Heart size={17} fill={saved.includes(item.id) ? 'currentColor' : 'none'} /></button></div><p className="mt-1 flex items-center gap-1 truncate text-[11px] text-[#718078]"><MapPin size={12} />{item.locality}</p><p className="mt-2 text-sm font-bold text-[#174936]">{money(item.price, item.purpose)}</p><p className="mt-2 flex items-center gap-1 border-t border-[#edf0ec] pt-2 text-[10px] text-[#65736a]"><BedDouble size={13} />{item.bedrooms ? `${item.bedrooms} bed` : item.type.replace('-', ' ')}{item.area ? ` · ${item.area.toLocaleString('en-IN')} sq.ft.` : ''}</p></div></article>)}</div> : <div className="mt-5 rounded-[18px] border border-dashed border-[#d4ddcf] bg-[#fbfcf7] px-5 py-7 text-center"><p className="text-base font-semibold">{listingsState === 'unavailable' ? 'Live listings are not connected yet' : 'No published homes yet'}</p><p className="mx-auto mt-1 max-w-md text-sm leading-6 text-[#718078]">{listingsState === 'unavailable' ? 'Recently published properties will appear here once the marketplace database is available.' : 'Be among the first to share a home in Gurugram.'}</p><Link href="/post" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#174936] px-4 text-xs font-bold text-white">List your property <ArrowRight size={14} /></Link></div>}
+        <div className="flex items-end justify-between"><div><p className="font-mono text-[10px] font-bold uppercase tracking-[.2em] text-[#829c28]">New listed</p><h2 className="mt-2 text-2xl font-semibold tracking-[-.045em] sm:text-3xl">Recently added homes</h2></div><div className="flex flex-col items-end gap-1"><Link href="/search" className="inline-flex items-center gap-1 text-sm font-bold text-[#294931]">See all <ArrowRight size={16} /></Link>{listingsState === 'demo' && <span className="text-[9px] font-semibold uppercase tracking-wide text-[#758064]">Sample listings</span>}</div></div>
+        {listingsState === 'loading' ? <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">{[0,1,2,3].map((item) => <div key={item} className="h-[260px] animate-pulse rounded-[17px] bg-[#e6e9df]" />)}</div> : <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{listings.map((item) => { const href = item.demo ? `/search?${new URLSearchParams({ purpose: item.purpose, q: item.locality })}` : `/property/${item.id}`; return <article key={item.id} className="group overflow-hidden rounded-[17px] border border-[#e3e6df] bg-white shadow-[0_5px_18px_rgba(29,46,35,.05)]"><Link href={href} className="relative block h-[145px] overflow-hidden bg-[#e3e9dd] sm:h-[185px]">{item.images?.[0] ? <img src={item.images[0]} alt={item.title} className="size-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex size-full items-center justify-center text-[#72836e]"><Building2 size={34} strokeWidth={1.3} /></div>}<span className="absolute left-2 top-2 rounded-md bg-[#b7d649] px-2 py-1 text-[9px] font-bold uppercase text-[#263d25]">{item.demo ? 'Sample' : 'New'}</span>{item.verifiedAt && !item.demo && <span className="absolute bottom-2 left-2 rounded-md bg-white/95 px-2 py-1 text-[9px] font-bold text-[#315246]">Verified</span>}</Link><div className="p-3"><div className="flex items-start justify-between gap-1"><Link href={href} className="line-clamp-1 text-sm font-bold leading-5">{item.title}</Link>{item.demo ? <span title="Sample cards cannot be shortlisted" aria-label="Sample listing" className="-mt-1 flex size-8 shrink-0 items-center justify-center text-[#315246]/60"><Heart size={17} /></span> : <button type="button" aria-label={saved.includes(item.id) ? 'Remove from shortlist' : 'Save to shortlist'} aria-pressed={saved.includes(item.id)} onClick={() => toggleSaved(item.id)} className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full text-[#315246] hover:bg-[#f1f5e5]"><Heart size={17} fill={saved.includes(item.id) ? 'currentColor' : 'none'} /></button>}</div><p className="mt-1 flex items-center gap-1 truncate text-[11px] text-[#718078]"><MapPin size={12} />{item.locality}</p><p className="mt-2 text-sm font-bold text-[#174936]">{money(item.price, item.purpose)}</p><p className="mt-2 flex items-center gap-1 border-t border-[#edf0ec] pt-2 text-[10px] text-[#65736a]"><BedDouble size={13} />{item.bedrooms ? `${item.bedrooms} Bed` : item.type.replace('-', ' ')}{item.bathrooms ? ` · ${item.bathrooms} Bath` : ''}{item.area ? ` · ${item.area.toLocaleString('en-IN')} sq.ft.` : ''}</p></div></article>})}</div>}
       </section>
 
       <section className="mx-auto max-w-[1360px] px-4 pb-4 pt-9 sm:px-8 sm:pt-12 lg:px-10">
