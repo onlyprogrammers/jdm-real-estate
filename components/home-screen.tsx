@@ -1,145 +1,557 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { ArrowRight, BedDouble, Building2, Heart, MapPin, Menu, Search, ShieldCheck, SlidersHorizontal, Sparkles, X } from 'lucide-react'
-import { BottomNav } from '@/components/bottom-nav'
-
-const localities = [
-  { name: 'DLF Phase 3', note: 'Close to Cyber City', tag: 'Near Cyber City', homes: '2.1K+ Homes', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=85' },
-  { name: 'Sector 56', note: 'Golf Course Road', tag: 'Metro connected', homes: '1.6K+ Homes', image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=85' },
-  { name: 'Sohna Road', note: 'Room to grow', tag: 'Family friendly', homes: '1.2K+ Homes', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=85' },
-]
-
-const suggestions: { label: string; filters: Record<string, string> }[] = [
-  { label: 'Under ₹25K', filters: { maxPrice: '25000' } },
-  { label: 'No brokerage', filters: { brokerage: 'owner' } },
-  { label: '1 RK – 4 BHK', filters: { bedrooms: '1' } },
-]
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  Building2,
+  Check,
+  Heart,
+  MapPin,
+  Menu,
+  Search,
+  ShieldCheck,
+  X,
+} from "lucide-react";
+import { BottomNav } from "@/components/bottom-nav";
+import { sampleProperties } from "@/data/sample-properties";
 
 type Listing = {
-  id: string; title: string; locality: string; price: number; purpose: string; type: string
-  bedrooms?: number | null; bathrooms?: number | null; area?: number | null; images?: string[] | null; verifiedAt?: string | null; demo?: boolean
-}
-
-const demoListings: Listing[] = [
-  { id: 'demo-sector-56-3bhk', title: '3 BHK Apartment', locality: 'Sector 56, Gurugram', price: 45000, purpose: 'rent', type: 'apartment', bedrooms: 3, bathrooms: 3, area: 1650, images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=700&q=80'], demo: true },
-  { id: 'demo-dlf-phase-3-2bhk', title: '2 BHK Apartment', locality: 'DLF Phase 3', price: 28000, purpose: 'rent', type: 'apartment', bedrooms: 2, bathrooms: 2, area: 1250, images: ['https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=700&q=80'], demo: true },
-  { id: 'demo-golf-course-4bhk', title: '4 BHK Builder Floor', locality: 'Golf Course Road', price: 85000, purpose: 'rent', type: 'builder-floor', bedrooms: 4, bathrooms: 4, area: 2400, images: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=700&q=80'], demo: true },
-  { id: 'demo-sohna-road-1bhk', title: '1 BHK Apartment', locality: 'Sohna Road', price: 18500, purpose: 'rent', type: 'apartment', bedrooms: 1, bathrooms: 1, area: 650, images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=700&q=80'], demo: true },
-]
-
-const money = (amount: number, purpose: string) => `₹${new Intl.NumberFormat('en-IN').format(amount)}${purpose === 'sale' ? '' : ' / month'}`
+  id: string;
+  title: string;
+  locality: string;
+  price: number;
+  purpose: string;
+  type: string;
+  bedrooms?: number | null;
+  area?: number | null;
+  images?: string[] | null;
+  verifiedAt?: string | null;
+  sample?: boolean;
+};
+const localities = [
+  {
+    name: "Golf Course Road",
+    note: "A considered city address",
+    image: "/images/gurugram-residences.png",
+    tone: "from-[#706b5f] to-[#343e36]",
+  },
+  {
+    name: "DLF Phase 3",
+    note: "Close to the city’s business district",
+    image: "/images/sample-builder-floor.png",
+    tone: "from-[#877b68] to-[#3d5145]",
+  },
+  {
+    name: "Dwarka Expressway",
+    note: "A growing Gurugram corridor",
+    image: "/images/sample-apartment.png",
+    tone: "from-[#6e7770] to-[#34463c]",
+  },
+];
+const categories = [
+  "Apartments",
+  "Builder floors",
+  "Villas & houses",
+  "Residential plots",
+  "Office spaces",
+  "Retail & commercial",
+];
+const price = (value: number, purpose: string) =>
+  purpose === "rent" || purpose === "pg"
+    ? `₹${new Intl.NumberFormat("en-IN").format(value)} / month`
+    : `₹${new Intl.NumberFormat("en-IN").format(value)}`;
 
 export function HomeScreen() {
-  const router = useRouter()
-  const [query, setQuery] = useState('')
-  const [purpose, setPurpose] = useState('rent')
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [listings, setListings] = useState<Listing[]>([])
-  const [listingsState, setListingsState] = useState<'loading' | 'ready' | 'demo'>('loading')
-  const [saved, setSaved] = useState<string[]>([])
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [purpose, setPurpose] = useState("sale");
+  const [propertyType, setPropertyType] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [status, setStatus] = useState<
+    "loading" | "ready" | "sample"
+  >("loading");
+  const [saved, setSaved] = useState<string[]>([]);
 
   useEffect(() => {
-    let active = true
-    fetch('/api/properties?page=1&pageSize=4')
+    let active = true;
+    fetch("/api/properties?page=1&pageSize=4")
       .then(async (response) => {
-        const data = await response.json()
-        if (!active) return
-        const liveListings = Array.isArray(data.properties) ? data.properties as Listing[] : []
-        setListings(liveListings.length ? liveListings : demoListings)
-        setListingsState(response.ok && liveListings.length ? 'ready' : 'demo')
+        const data = await response.json();
+        if (!active) return;
+        const live = Array.isArray(data.properties)
+          ? (data.properties as Listing[])
+          : [];
+        setListings(live.length ? live : sampleProperties);
+        setStatus(live.length ? "ready" : "sample");
       })
-      .catch(() => { if (active) { setListings(demoListings); setListingsState('demo') } })
-    try { setSaved(JSON.parse(localStorage.getItem('jdm:saved') || '[]')) } catch { setSaved([]) }
-    const syncSaved = () => { try { setSaved(JSON.parse(localStorage.getItem('jdm:saved') || '[]')) } catch { setSaved([]) } }
-    window.addEventListener('storage', syncSaved)
-    window.addEventListener('jdm:saved-change', syncSaved)
-    return () => { active = false; window.removeEventListener('storage', syncSaved); window.removeEventListener('jdm:saved-change', syncSaved) }
-  }, [])
+      .catch(() => {
+        if (active) {
+          setListings(sampleProperties);
+          setStatus("sample");
+        }
+      });
+    const sync = () => {
+      try {
+        setSaved(JSON.parse(localStorage.getItem("jdm:saved") || "[]"));
+      } catch {
+        setSaved([]);
+      }
+    };
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("jdm:saved-change", sync);
+    return () => {
+      active = false;
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("jdm:saved-change", sync);
+    };
+  }, []);
 
   function search(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const params = new URLSearchParams({ purpose, ...(query.trim() ? { q: query.trim() } : {}) })
-    router.push(`/search?${params.toString()}`)
+    event.preventDefault();
+    router.push(
+      `/search?${new URLSearchParams({ purpose: purpose === "invest" ? "sale" : purpose, ...(propertyType ? { type: propertyType } : {}), ...(query.trim() ? { q: query.trim() } : {}) })}`,
+    );
   }
-
   function toggleSaved(id: string) {
-    const next = saved.includes(id) ? saved.filter((item) => item !== id) : [...saved, id]
-    setSaved(next)
-    localStorage.setItem('jdm:saved', JSON.stringify(next))
-    window.dispatchEvent(new Event('jdm:saved-change'))
+    const next = saved.includes(id)
+      ? saved.filter((item) => item !== id)
+      : [...saved, id];
+    setSaved(next);
+    localStorage.setItem("jdm:saved", JSON.stringify(next));
+    window.dispatchEvent(new Event("jdm:saved-change"));
   }
 
   return (
-    <main className="min-h-screen bg-[#f6f6ef] text-[#17271f]">
-      <section className="relative overflow-hidden bg-[#073c2c] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_78%_48%,rgba(183,214,73,.17),transparent_34%),linear-gradient(112deg,#052f24_0%,#104631_58%,#174936_100%)]" />
-        <div className="pointer-events-none absolute -right-20 top-24 h-[270px] w-[78%] opacity-[.13] sm:top-20 sm:h-[370px] sm:w-[68%] sm:opacity-[.2] lg:top-20 lg:h-[450px] lg:w-[660px] lg:opacity-40" aria-hidden="true">
-          <div className="absolute bottom-0 right-5 h-[180px] w-28 border border-[#b7d649]/40 bg-gradient-to-t from-[#061d19] to-[#b7d649]/15 [clip-path:polygon(20%_0,78%_8%,100%_100%,0_100%)] sm:h-[250px] sm:w-40 lg:h-[300px] lg:w-48" />
-          <div className="absolute bottom-0 right-32 h-[250px] w-28 border border-[#b7d649]/45 bg-gradient-to-t from-[#071f19] via-[#185c43] to-[#9aac4c]/30 [clip-path:polygon(40%_0,68%_10%,100%_100%,0_100%)] sm:right-44 sm:h-[340px] sm:w-40 lg:right-56 lg:h-[410px] lg:w-44" />
-          <div className="absolute bottom-0 right-20 h-[160px] w-36 border border-[#b7d649]/35 bg-gradient-to-t from-[#071b17] to-[#71903c]/35 [clip-path:polygon(0_10%,100%_0,90%_100%,12%_100%)] sm:right-28 sm:h-[220px] sm:w-44 lg:right-36 lg:h-[250px] lg:w-52" />
-          <div className="absolute right-24 top-8 size-16 rounded-full bg-[#d9e47e]/80 blur-[1px] sm:right-32 sm:size-20 lg:right-36 lg:top-10 lg:size-24" />
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#062d23] to-transparent" />
+    <main className="min-h-screen bg-[#f7f5ef] text-[#20241f] pb-20 md:pb-0">
+      <section className="relative overflow-hidden bg-[#17251f] text-white">
+        <img
+          src="/images/gurugram-residences.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 size-full object-cover opacity-45 lg:hidden"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_35%,rgba(188,155,98,.25),transparent_42%),linear-gradient(100deg,rgba(23,37,31,.97)_0%,rgba(23,37,31,.88)_48%,rgba(23,37,31,.62)_100%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute bottom-0 right-0 hidden h-[410px] w-[48%] opacity-30 lg:block"
+        >
+          <div className="absolute bottom-0 right-[18%] h-[78%] w-[24%] border-x border-white/20 bg-white/[.04] [clip-path:polygon(14%_0,100%_12%,100%_100%,0_100%)]" />
+          <div className="absolute bottom-0 right-[4%] h-[56%] w-[22%] border-x border-white/20 bg-white/[.06] [clip-path:polygon(0_10%,84%_0,100%_100%,0_100%)]" />
+          <div className="absolute bottom-0 right-[40%] h-[48%] w-[20%] border-x border-white/20 bg-white/[.04] [clip-path:polygon(0_0,100%_16%,100%_100%,0_100%)]" />
         </div>
-
-        <header className="relative mx-auto flex max-w-[1440px] items-center justify-between px-4 py-4 sm:px-8 lg:px-10 lg:py-7">
-          <Link href="/" className="flex items-center gap-3" aria-label="JDM Homes home">
-            <span className="flex size-11 items-center justify-center rounded-full border border-[#9eaf2e]/70 text-[#b7d649] sm:size-[58px]"><Building2 size={23} strokeWidth={1.8} /></span>
-            <span><span className="block text-[19px] font-bold tracking-[-.055em] sm:text-2xl">JDM <span className="text-[#b7d649]">Homes</span></span><span className="block text-[8px] font-semibold uppercase tracking-[.1em] text-white/70 sm:text-[10px]">Gurugram real estate experts</span></span>
+        <header className="relative z-10 mx-auto flex max-w-[1320px] items-center justify-between px-3 py-4 sm:px-4 lg:px-10 lg:py-6">
+          <Link
+            href="/"
+            className="flex items-center gap-3"
+            aria-label="JDM Real Estate home"
+          >
+            <img src="/jdm-mark.svg" alt="" className="size-11" />
+            <span>
+              <strong className="block text-[17px] tracking-[.08em]">
+                JDM{" "}
+                <span className="font-normal text-[#d5bd8e]">REAL ESTATE</span>
+              </strong>
+              <span className="block text-[8px] uppercase tracking-[.19em] text-white/55">
+                Gurugram · Local expertise
+              </span>
+            </span>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm font-semibold text-white/80 md:flex" aria-label="Main menu"><Link className="hover:text-[#d8ef78]" href="/search">Explore homes</Link><Link className="hover:text-[#d8ef78]" href="/post">List a property</Link><Link className="hover:text-[#d8ef78]" href="/profile">My account</Link><Link href="/login" className="rounded-xl border border-white/25 px-4 py-2.5 text-white hover:bg-white/10">Sign in</Link></nav>
-          <div className="relative flex items-center gap-2"><Link href="/search" aria-label="Search homes" className="flex size-10 items-center justify-center rounded-full border border-[#a7bb34]/55 text-white hover:bg-white/10 sm:size-[54px]"><Search size={21} /></Link><button type="button" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} aria-controls="mobile-home-menu" onClick={() => setMenuOpen((open) => !open)} className="flex size-10 items-center justify-center rounded-full border border-[#a7bb34]/55 text-white hover:bg-white/10 md:hidden">{menuOpen ? <X size={20} /> : <Menu size={20} />}</button>
-            {menuOpen && <nav id="mobile-home-menu" aria-label="Mobile menu" className="absolute right-0 top-full z-30 mt-3 flex w-52 flex-col rounded-2xl border border-[#e4e8dd] bg-[#fffefa] p-2 text-sm font-semibold text-[#263d31] shadow-xl md:hidden"><Link onClick={() => setMenuOpen(false)} href="/search" className="rounded-xl px-3 py-3 hover:bg-[#f1f4e8]">Explore homes</Link><Link onClick={() => setMenuOpen(false)} href="/post" className="rounded-xl px-3 py-3 hover:bg-[#f1f4e8]">List a property</Link><Link onClick={() => setMenuOpen(false)} href="/profile" className="rounded-xl px-3 py-3 hover:bg-[#f1f4e8]">My account</Link><Link onClick={() => setMenuOpen(false)} href="/login" className="rounded-xl px-3 py-3 hover:bg-[#f1f4e8]">Sign in</Link></nav>}
+          <nav
+            className="hidden items-center gap-7 text-[12px] font-medium text-white/75 lg:flex"
+            aria-label="Main navigation"
+          >
+            <Link href="/search?purpose=sale">Buy</Link>
+            <Link href="/search?purpose=rent">Rent</Link>
+            <Link href="/search?type=commercial">Commercial</Link>
+            <Link href="/search">Locations</Link>
+            <Link href="/compare">Investment</Link>
+            <Link href="/saved">Saved homes</Link>
+            <Link href="/post">Sell property</Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/search"
+              className="hidden border border-[#d5bd8e] px-4 py-2.5 text-xs font-semibold text-[#e4d5b7] transition hover:bg-[#d5bd8e] hover:text-[#17251f] sm:block"
+            >
+              Explore homes
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              className="flex size-10 items-center justify-center border border-white/25 lg:hidden"
+            >
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
+          {menuOpen && (
+            <nav
+              aria-label="Mobile navigation"
+              className="absolute inset-x-4 top-[calc(100%-4px)] z-30 flex flex-col border border-[#e8e1d4] bg-[#fbfaf7] p-2 text-sm font-semibold text-[#27352e] shadow-xl lg:hidden"
+            >
+              {[
+                ["Buy", "/search?purpose=sale"],
+                ["Rent", "/search?purpose=rent"],
+                ["Commercial", "/search?type=commercial"],
+                ["Explore locations", "/search"],
+                ["Saved homes", "/saved"],
+                ["Sell your property", "/post"],
+                ["Sign in", "/login"],
+              ].map(([label, href]) => (
+                <Link
+                  key={label}
+                  onClick={() => setMenuOpen(false)}
+                  href={href}
+                  className="px-4 py-3 hover:bg-[#f0eee7]"
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          )}
         </header>
-
-        <div className="relative mx-auto grid max-w-[1440px] items-center px-5 pb-20 pt-5 sm:px-10 sm:pb-28 sm:pt-7 lg:min-h-[500px] lg:grid-cols-[1fr_.8fr] lg:px-10 lg:pb-24 lg:pt-5">
-          <div className="relative z-10 max-w-[670px]">
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#9bb834]/55 bg-white/[.04] px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[.16em] text-[#c2df4a]"><Sparkles size={13} /> Gurugram, made more findable</p>
-            <h1 className="max-w-[680px] text-[42px] font-medium leading-[.97] tracking-[-.055em] sm:text-6xl lg:text-[68px]">Find your corner<br className="hidden sm:block" /> of <span className="text-[#b7d649]">Gurugram.</span></h1>
-            <p className="mt-5 max-w-[450px] text-sm leading-6 text-white/80 sm:text-base sm:leading-7">From a first room near Cyber City to a family home on Golf Course Road, start with the neighbourhood that feels right.</p>
+        <div className="relative mx-auto grid min-h-[400px] max-w-[1320px] items-center px-5 pb-24 pt-8 sm:min-h-[440px] sm:px-8 sm:pb-28 lg:min-h-[540px] lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:pb-32 lg:pt-4">
+          <div className="relative z-10 max-w-[650px]">
+            <p className="mb-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.24em] text-[#e2c99b]">
+              <span className="h-px w-7 bg-[#d5bd8e]" />
+              A better way to find your place
+            </p>
+            <h1 className="font-serif text-[34px] font-medium leading-[1.02] tracking-[-.035em] sm:text-6xl lg:text-[70px]">
+              Find a property
+              <br />
+              that moves{" "}
+              <em className="font-normal text-[#d5bd8e]">you forward.</em>
+            </h1>
+            <p className="mt-5 max-w-[460px] text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
+              Discover homes, commercial spaces and investment opportunities
+              across Gurugram with local guidance at every step.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/search"
+              className="inline-flex min-h-12 items-center gap-2 bg-[#d5bd8e] px-5 text-xs font-bold text-[#202b24] shadow-[0_8px_24px_rgba(0,0,0,.16)] hover:bg-[#e4d3b4]"
+              >
+                Explore properties <ArrowRight size={15} />
+              </Link>
+              <Link
+                href="/post"
+              className="inline-flex min-h-12 items-center border border-white/30 px-5 text-xs font-semibold text-white hover:border-white/60 hover:bg-white/10"
+              >
+                List a property
+              </Link>
+            </div>
           </div>
-          <div className="hidden lg:block" aria-hidden="true" />
+          <div className="hidden justify-end lg:flex">
+            <div className="relative mr-10 h-[350px] w-[390px] overflow-hidden border border-white/25 shadow-[0_28px_80px_rgba(0,0,0,.24)]">
+              <img src="/images/gurugram-residences.png" alt="Modern residences surrounded by greenery" fetchPriority="high" className="size-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#17251f]/65 via-transparent to-transparent" />
+              <div className="absolute bottom-0 left-5 border border-[#d5bd8e]/60 bg-[#202d26] px-5 py-4">
+                <p className="text-[9px] uppercase tracking-[.19em] text-[#d5bd8e]">
+                  Your next chapter
+                </p>
+                <p className="mt-1 font-serif text-xl">
+                  Starts with the right address.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
-
-      <div className="relative z-10 mx-auto -mt-12 max-w-[1360px] px-4 sm:-mt-16 sm:px-8 lg:px-10">
-        <div className="rounded-[22px] border border-[#e7e8df] bg-[#fffefa] p-3 shadow-[0_18px_48px_rgba(24,50,37,.13)] sm:rounded-[24px] sm:p-5 lg:p-6">
-          <div className="flex gap-2 px-1 pb-3" role="group" aria-label="Listing purpose">
-            {['rent', 'sale', 'pg'].map((item) => <button key={item} type="button" onClick={() => setPurpose(item)} aria-pressed={purpose === item} className={`min-h-10 rounded-xl px-4 text-xs font-bold capitalize transition ${purpose === item ? 'bg-[#eef1e2] text-[#183c2d]' : 'text-[#68746c] hover:bg-[#f3f4ef]'}`}>{item === 'pg' ? 'PG / Co-living' : item === 'sale' ? 'Buy' : 'Rent'}</button>)}
+      <div className="relative z-10 mx-auto -mt-10 max-w-[1240px] px-4 sm:-mt-12 sm:px-8 lg:px-10">
+        <div className="border border-[#e8e3d8] bg-[#fffefa] p-4 shadow-[0_18px_45px_rgba(30,39,32,.13)] sm:p-6">
+          <div
+            className="mb-3 flex gap-1"
+            role="group"
+            aria-label="Property purpose"
+          >
+            {[
+              ["sale", "Buy"],
+              ["rent", "Rent"],
+              ["invest", "Invest"],
+            ].map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                onClick={() => setPurpose(value)}
+                aria-pressed={purpose === value}
+                className={`min-h-10 px-4 text-xs font-semibold ${purpose === value ? "bg-[#ece8dd] text-[#27362d]" : "text-[#778078]"}`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <form onSubmit={search} className="flex min-h-[58px] items-center gap-2 rounded-[15px] border border-[#e1e4df] bg-white p-1.5 pl-3 focus-within:border-[#a6bf3c] sm:min-h-[68px] sm:pl-5">
-            <MapPin className="shrink-0 text-[#315d3d]" size={20} /><input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Search by locality or property" placeholder="Sector, society or landmark" className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none placeholder:text-[#89928c] sm:text-base" />
-            <button aria-label="Search homes" className="flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-xl bg-[#073c2c] px-4 text-sm font-bold text-white transition hover:bg-[#15513b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a9c83b] sm:min-w-[66px]"><Search size={20} /><span className="hidden sm:inline">Search</span></button>
+          <form
+            onSubmit={search}
+            className="grid gap-2 sm:grid-cols-[1fr_190px_120px]"
+          >
+            <label className="flex min-h-12 items-center gap-2 border border-[#e4e1d8] px-3">
+              <MapPin size={17} className="text-[#967a4e]" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Location"
+                placeholder="Locality, sector or landmark"
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#92958d]"
+              />
+            </label>
+            <select
+              aria-label="Property category"
+              className="min-h-12 border border-[#e4e1d8] bg-white px-3 text-sm text-[#657068]"
+              value={propertyType}
+              onChange={(e) => setPropertyType(e.target.value)}
+            >
+              <option value="">Any property type</option>
+              <option value="apartment">Apartments</option>
+              <option value="builder-floor">Builder floors</option>
+              <option value="commercial">Commercial</option>
+            </select>
+            <button className="flex min-h-12 items-center justify-center gap-2 bg-[#26372e] px-5 text-sm font-semibold text-white">
+              <Search size={17} />
+              Search
+            </button>
           </form>
-          <div className="hide-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1 sm:mt-4 sm:grid sm:grid-cols-4">
-            {suggestions.map((item) => <Link key={item.label} href={`/search?${new URLSearchParams({ purpose, ...item.filters })}`} className="flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#e2e4df] bg-white px-3 text-[11px] font-semibold text-[#43534a] transition hover:border-[#b5c85b] hover:bg-[#f9fbed] sm:text-sm"><SlidersHorizontal size={15} className="hidden text-[#607c22] sm:block" />{item.label}</Link>)}
-            <Link href={`/search?${new URLSearchParams({ purpose })}`} className="flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#e2e4df] bg-white px-3 text-[11px] font-semibold text-[#43534a] transition hover:border-[#b5c85b] hover:bg-[#f9fbed] sm:text-sm"><SlidersHorizontal size={15} className="text-[#607c22]" />More Filters</Link>
+          <div className="mt-3 flex items-center gap-2 text-[11px] text-[#788178]">
+            <ShieldCheck size={15} className="text-[#987c50]" /> Property
+            details are shown as provided and reviewed.
           </div>
-          <div className="mt-3 flex items-center gap-2 px-1 text-xs text-[#657168] sm:mt-4 sm:text-sm"><ShieldCheck size={17} className="shrink-0 text-[#66851e]" /> Local details that help you decide with confidence.</div>
         </div>
       </div>
-
-      <section className="mx-auto max-w-[1360px] px-4 pt-10 sm:px-8 sm:pt-12 lg:px-10 lg:pt-10">
-        <div className="flex items-end justify-between gap-4"><div><p className="font-mono text-[10px] font-bold uppercase tracking-[.2em] text-[#829c28]">Explore Gurugram</p><h2 className="mt-2 text-[27px] font-semibold leading-tight tracking-[-.045em] sm:text-3xl">Gurugram, by neighbourhood.</h2><p className="mt-2 text-sm text-[#69776e] sm:text-base">Explore the places people love to live in.</p></div><Link href="/search" className="hidden min-h-11 items-center gap-3 rounded-xl border border-[#9aaf37] px-4 text-sm font-bold text-[#284832] sm:inline-flex">View all areas <ArrowRight size={17} /></Link></div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3 sm:gap-4">{localities.map((place) => <Link href={`/search?q=${encodeURIComponent(place.name)}`} key={place.name} className="group relative min-h-[205px] overflow-hidden rounded-[19px] bg-[#d7d8cf] sm:min-h-[235px] lg:min-h-[280px]"><img src={place.image} alt={`Homes in ${place.name}`} className="absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-[1.045]" /><div className="absolute inset-0 bg-gradient-to-t from-[#071d16]/85 via-[#071d16]/15 to-transparent" /><span className="absolute right-3 top-3 rounded-full bg-[#104631]/95 px-3 py-1.5 text-[10px] font-bold text-white sm:right-4 sm:top-4 sm:text-xs">{place.tag}</span><div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5"><p className="text-xl font-bold tracking-[-.035em] sm:text-2xl">{place.name}</p><p className="mt-1 text-xs text-white/85 sm:text-sm">{place.note}</p><span className="mt-2 inline-flex rounded-full border border-[#b7d649]/70 bg-[#062a20]/65 px-2.5 py-1 text-[10px] font-semibold text-white">{place.homes}</span></div></Link>)}</div>
-        <Link href="/search" className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#dfe3da] bg-white text-sm font-bold text-[#3c5d35] sm:hidden">View all areas <ArrowRight size={16} /></Link>
+      <section className="mx-auto max-w-[1240px] px-4 pt-12 sm:px-8 sm:pt-16 lg:px-10">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
+              Find your fit
+            </p>
+            <h2 className="mt-2 font-serif text-3xl font-medium tracking-[-.025em] sm:text-4xl">
+              Explore by property type
+            </h2>
+          </div>
+          <Link
+            href="/search"
+            className="hidden items-center gap-2 text-xs font-semibold text-[#33463a] sm:flex"
+          >
+            All properties <ArrowRight size={15} />
+          </Link>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {categories.map((category, i) => (
+            <Link
+              key={category}
+              href={`/search?${new URLSearchParams({ type: ["apartment", "builder-floor", "villa", "plot", "commercial", "commercial"][i] })}`}
+              className="group flex min-h-[100px] flex-col justify-between border border-[#e7e2d7] bg-[#fffefa] p-3 transition duration-200 hover:-translate-y-0.5 hover:border-[#b8a078] hover:shadow-[0_10px_26px_rgba(38,48,38,.08)] sm:min-h-[120px] sm:p-4"
+            >
+              <span className="flex size-8 items-center justify-center bg-[#f1eee6] text-[#8e744d] transition-colors group-hover:bg-[#e8edd5] group-hover:text-[#40583a]">
+                <Building2 size={16} />
+              </span>
+              <span className="text-xs font-semibold leading-5">
+                {category}
+              </span>
+            </Link>
+          ))}
+        </div>
       </section>
-
-      <section className="mx-auto max-w-[1360px] px-4 pt-10 sm:px-8 sm:pt-12 lg:px-10">
-        <div className="flex items-end justify-between"><div><p className="font-mono text-[10px] font-bold uppercase tracking-[.2em] text-[#829c28]">New listed</p><h2 className="mt-2 text-2xl font-semibold tracking-[-.045em] sm:text-3xl">Recently added homes</h2></div><div className="flex flex-col items-end gap-1"><Link href="/search" className="inline-flex items-center gap-1 text-sm font-bold text-[#294931]">See all <ArrowRight size={16} /></Link>{listingsState === 'demo' && <span className="text-[9px] font-semibold uppercase tracking-wide text-[#758064]">Sample listings</span>}</div></div>
-        {listingsState === 'loading' ? <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">{[0,1,2,3].map((item) => <div key={item} className="h-[260px] animate-pulse rounded-[17px] bg-[#e6e9df]" />)}</div> : <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">{listings.map((item) => { const href = item.demo ? `/search?${new URLSearchParams({ purpose: item.purpose, q: item.locality })}` : `/property/${item.id}`; return <article key={item.id} className="group overflow-hidden rounded-[17px] border border-[#e3e6df] bg-white shadow-[0_5px_18px_rgba(29,46,35,.05)]"><Link href={href} className="relative block h-[145px] overflow-hidden bg-[#e3e9dd] sm:h-[185px]">{item.images?.[0] ? <img src={item.images[0]} alt={item.title} className="size-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex size-full items-center justify-center text-[#72836e]"><Building2 size={34} strokeWidth={1.3} /></div>}<span className="absolute left-2 top-2 rounded-md bg-[#b7d649] px-2 py-1 text-[9px] font-bold uppercase text-[#263d25]">{item.demo ? 'Sample' : 'New'}</span>{item.verifiedAt && !item.demo && <span className="absolute bottom-2 left-2 rounded-md bg-white/95 px-2 py-1 text-[9px] font-bold text-[#315246]">Verified</span>}</Link><div className="p-3"><div className="flex items-start justify-between gap-1"><Link href={href} className="line-clamp-1 text-sm font-bold leading-5">{item.title}</Link>{item.demo ? <span title="Sample cards cannot be shortlisted" aria-label="Sample listing" className="-mt-1 flex size-8 shrink-0 items-center justify-center text-[#315246]/60"><Heart size={17} /></span> : <button type="button" aria-label={saved.includes(item.id) ? 'Remove from shortlist' : 'Save to shortlist'} aria-pressed={saved.includes(item.id)} onClick={() => toggleSaved(item.id)} className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full text-[#315246] hover:bg-[#f1f5e5]"><Heart size={17} fill={saved.includes(item.id) ? 'currentColor' : 'none'} /></button>}</div><p className="mt-1 flex items-center gap-1 truncate text-[11px] text-[#718078]"><MapPin size={12} />{item.locality}</p><p className="mt-2 text-sm font-bold text-[#174936]">{money(item.price, item.purpose)}</p><p className="mt-2 flex items-center gap-1 border-t border-[#edf0ec] pt-2 text-[10px] text-[#65736a]"><BedDouble size={13} />{item.bedrooms ? `${item.bedrooms} Bed` : item.type.replace('-', ' ')}{item.bathrooms ? ` · ${item.bathrooms} Bath` : ''}{item.area ? ` · ${item.area.toLocaleString('en-IN')} sq.ft.` : ''}</p></div></article>})}</div>}
+      <section className="mx-auto max-w-[1240px] px-4 pt-12 sm:px-8 sm:pt-16 lg:px-10">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
+              Local knowledge
+            </p>
+            <h2 className="mt-2 font-serif text-3xl font-medium tracking-[-.025em] sm:text-4xl">
+              Explore Gurugram
+            </h2>
+          </div>
+          <Link
+            href="/search"
+            className="hidden items-center gap-2 text-xs font-semibold text-[#33463a] sm:flex"
+          >
+            Explore locations <ArrowRight size={15} />
+          </Link>
+        </div>
+        <div className="mt-5 flex gap-3 overflow-x-auto sm:grid sm:grid-cols-3">
+          {localities.map((place, i) => (
+            <Link
+              href={`/search?q=${encodeURIComponent(place.name)}`}
+              key={place.name}
+              className={`group relative min-h-[170px] min-w-[210px] overflow-hidden bg-gradient-to-br ${place.tone} sm:min-h-[280px]`}
+            >
+              <img src={place.image} alt={`Representative property image for ${place.name}`} loading="lazy" className="absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-105" />
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 bottom-0 h-[80%] opacity-40"
+              >
+                <div className="absolute bottom-0 left-[10%] h-[68%] w-[30%] border-x border-white/40 bg-black/15 [clip-path:polygon(15%_0,100%_12%,100%_100%,0_100%)]" />
+                <div className="absolute bottom-0 left-[46%] h-[90%] w-[27%] border-x border-white/40 bg-black/20 [clip-path:polygon(0_12%,70%_0,100%_100%,0_100%)]" />
+                <div className="absolute bottom-0 right-[4%] h-[55%] w-[25%] border-x border-white/40 bg-black/15 [clip-path:polygon(10%_0,100%_14%,100%_100%,0_100%)]" />
+                <div
+                  className={`absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent_0_36px,rgba(255,255,255,.22)_37px_39px)] ${i === 1 ? "opacity-70" : "opacity-45"}`}
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#142019]/85 via-transparent to-transparent" />
+              <div className="absolute inset-x-4 bottom-4 text-white sm:inset-x-5 sm:bottom-5">
+                <p className="font-serif text-xl">{place.name}</p>
+                <p className="mt-1 text-xs text-white/75">{place.note}</p>
+                <span className="mt-3 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#e0ccaa]">
+                  Explore <ArrowRight size={13} />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
       </section>
-
-      <section className="mx-auto max-w-[1360px] px-4 pb-4 pt-9 sm:px-8 sm:pt-12 lg:px-10">
-        <div className="relative overflow-hidden rounded-[22px] border border-[#e0e2d7] bg-[#f1f1e5] p-5 sm:flex sm:min-h-[200px] sm:items-center sm:px-9 sm:py-8"><div className="relative z-10 max-w-lg"><p className="font-mono text-[10px] font-bold uppercase tracking-[.2em] text-[#829c28]">A better move starts here</p><h2 className="mt-2 text-2xl font-semibold tracking-[-.05em] sm:text-3xl">Have a home to share?</h2><p className="mt-2 max-w-sm text-sm leading-6 text-[#69776e]">Post your property and connect with people looking nearby.</p><Link href="/post" className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#b7d649] px-5 text-sm font-bold text-[#23412f] transition hover:bg-[#c7e65a]">List your property <ArrowRight size={16} /></Link></div><div className="pointer-events-none absolute -bottom-12 -right-2 hidden h-[230px] w-[380px] items-end justify-center sm:flex" aria-hidden="true"><div className="h-40 w-32 rounded-t-[65px] bg-[#315a3d] shadow-[inset_10px_0_15px_rgba(255,255,255,.12)]"/><span className="absolute bottom-0 right-[105px] h-[185px] w-[3px] bg-[#62734a]"/><span className="absolute bottom-[115px] right-[70px] size-16 rounded-full bg-[#708252]"/><span className="absolute bottom-[145px] right-[150px] size-20 rounded-full bg-[#879564]"/><span className="absolute bottom-0 right-10 h-[155px] w-[4px] bg-[#566d45]"/><span className="absolute bottom-[90px] right-1 size-16 rounded-full bg-[#84935f]"/></div></div>
-        <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] border border-[#e5e7df] bg-white p-3 sm:grid-cols-4 sm:gap-0 sm:p-4">{[{ icon: ShieldCheck, title: 'Clear listing details', note: 'Know what is shared' }, { icon: Building2, title: 'Local knowledge', note: 'Gurugram focused' }, { icon: MapPin, title: 'Neighbourhood first', note: 'Find the right area' }, { icon: Heart, title: 'A simpler move', note: 'Search at your pace' }].map(({ icon: Icon, title, note }, index) => <div key={title} className={`flex items-center gap-2 px-2 py-2 sm:justify-center ${index % 2 === 1 ? '' : ''} ${index > 1 ? 'sm:border-l sm:border-[#e6e8e1]' : ''}`}><Icon size={22} className="shrink-0 text-[#718b21]" strokeWidth={1.6} /><div><p className="text-[11px] font-bold text-[#263d31] sm:text-xs">{title}</p><p className="mt-0.5 text-[10px] text-[#77837b]">{note}</p></div></div>)}</div>
+      <section className="mx-auto max-w-[1240px] px-4 pt-12 sm:px-8 sm:pt-16 lg:px-10">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
+              {status === "sample" ? "Example listings" : "Recently listed"}
+            </p>
+            <h2 className="mt-2 font-serif text-3xl font-medium tracking-[-.025em] sm:text-4xl">
+              Properties to consider
+            </h2>
+          </div>
+          <Link
+            href="/search"
+            className="flex items-center gap-1 text-xs font-semibold text-[#33463a]"
+          >
+            View search <ArrowRight size={15} />
+          </Link>
+        </div>
+        {status === "loading" ? (
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-64 animate-pulse bg-[#e9e5dc]" />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {listings.map((item) => (
+              <article
+                key={item.id}
+                className="group overflow-hidden border border-[#e7e2d7] bg-[#fffefa] shadow-[0_5px_18px_rgba(34,43,34,.035)] transition duration-200 hover:-translate-y-1 hover:border-[#d2c9b5] hover:shadow-[0_16px_34px_rgba(34,43,34,.11)]"
+              >
+                <Link
+                  href={`/property/${item.id}`}
+                  className="relative block h-36 overflow-hidden bg-[#e4e3db] sm:h-48"
+                >
+                  {item.images?.[0] ? (
+                    <img
+                      src={item.images[0]}
+                      alt={item.title}
+                      loading="lazy"
+                      className="size-full object-cover transition duration-500 group-hover:scale-[1.035]"
+                    />
+                  ) : (
+                    <div className="grid size-full place-items-center text-[#97866a]">
+                      <Building2 size={34} />
+                    </div>
+                  )}
+                  {item.sample ? (
+                    <span className="absolute left-2 top-2 bg-[#fffefa]/95 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-[#6b5636]">Example · not live</span>
+                  ) : item.verifiedAt && (
+                    <span className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/95 px-2 py-1 text-[9px] font-bold text-[#405848]">
+                      <Check size={12} />
+                      Reviewed
+                    </span>
+                  )}
+                </Link>
+                <div className="p-3 sm:p-4">
+                  <div className="flex justify-between gap-1">
+                    <Link
+                      href={`/property/${item.id}`}
+                      className="line-clamp-1 text-sm font-semibold"
+                    >
+                      {item.title}
+                    </Link>
+                    <button
+                      disabled={item.sample}
+                      onClick={() => toggleSaved(item.id)}
+                      aria-label={
+                        saved.includes(item.id)
+                          ? "Remove saved property"
+                          : item.sample ? "Example listing cannot be saved" : "Save property"
+                      }
+                      aria-pressed={saved.includes(item.id)}
+                      className="flex size-7 shrink-0 items-center justify-center text-[#7f735f] disabled:opacity-35"
+                    >
+                      <Heart
+                        size={16}
+                        fill={saved.includes(item.id) ? "currentColor" : "none"}
+                      />
+                    </button>
+                  </div>
+                  <p className="mt-1 flex items-center gap-1 truncate text-[11px] text-[#788078]">
+                    <MapPin size={12} />
+                    {item.locality}
+                  </p>
+                  <p className="mt-3 text-sm font-bold text-[#34463a]">
+                    {price(item.price, item.purpose)}
+                  </p>
+                  <p className="mt-2 border-t border-[#eeeae2] pt-2 text-[10px] text-[#737a72]">
+                    {item.bedrooms ? `${item.bedrooms} bedroom · ` : ""}
+                    {item.area
+                      ? `${item.area.toLocaleString("en-IN")} sq ft`
+                      : item.type.replaceAll("-", " ")}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
-
-      <footer className="mx-auto max-w-[1360px] px-5 pb-5 pt-5 text-[11px] text-[#879189] sm:px-8 lg:px-10"><div className="flex flex-col justify-between gap-2 border-t border-[#e1e6dd] pt-5 sm:flex-row"><span>JDM Homes · Gurugram neighbourhood marketplace</span><span>Confirm ownership and visit before making a payment.</span></div></footer>
+      <section className="mx-auto max-w-[1240px] px-4 pb-12 pt-12 sm:px-8 sm:pb-16 sm:pt-16 lg:px-10">
+        <div className="grid gap-6 bg-[#eae5d9] p-6 sm:grid-cols-[1fr_auto] sm:items-center sm:p-10">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
+              For property owners
+            </p>
+            <h2 className="mt-2 font-serif text-3xl font-medium">
+              Your property deserves
+              <br className="hidden sm:block" /> the right buyer.
+            </h2>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-[#687168]">
+              Share the details with our team. Every submission enters a review
+              queue before it can appear publicly.
+            </p>
+          </div>
+          <Link
+            href="/post"
+            className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#26372e] px-5 text-xs font-semibold text-white"
+          >
+            List your property <ArrowRight size={15} />
+          </Link>
+        </div>
+      </section>
+      <footer className="bg-[#17251f] px-5 py-8 text-white sm:px-8">
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold tracking-[.1em]">
+              JDM REAL ESTATE
+            </p>
+            <p className="mt-1 text-xs text-white/55">
+              Your property. Our local expertise.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/70">
+            <Link href="/search">Explore</Link>
+            <Link href="/post">List property</Link>
+            <Link href="/saved">Saved</Link>
+            <Link href="/login">Sign in</Link>
+            <Link href="/admin">Admin</Link>
+          </div>
+        </div>
+        <p className="mx-auto mt-6 max-w-[1240px] border-t border-white/15 pt-4 text-[10px] text-white/45">
+          Property information is subject to owner confirmation. JDM Real Estate
+          · Gurugram, Haryana
+        </p>
+      </footer>
       <BottomNav />
     </main>
-  )
+  );
 }

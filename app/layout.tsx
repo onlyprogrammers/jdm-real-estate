@@ -3,24 +3,21 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'JDM Homes · Find your place in Gurugram',
-  description: 'Verified homes, PGs, and rentals across Gurugram with transparent pricing.',
-  generator: 'v0.app',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://jdm-real-estate.vercel.app'),
+  title: {
+    default: 'JDM Real Estate | Property in Gurugram',
+    template: '%s | JDM Real Estate',
+  },
+  description: 'Discover homes, commercial spaces and property opportunities across Gurugram with local guidance from JDM Real Estate.',
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    siteName: 'JDM Real Estate',
+    title: 'JDM Real Estate | Property in Gurugram',
+    description: 'Discover homes, commercial spaces and property opportunities across Gurugram with local guidance.',
+  },
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
+    icon: [{ url: '/jdm-mark.svg', type: 'image/svg+xml' }],
     apple: '/apple-icon.png',
   },
 }

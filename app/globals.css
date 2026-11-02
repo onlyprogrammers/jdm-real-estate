@@ -48,24 +48,32 @@
 
 :root {
   color-scheme: light;
-  --background: #f6f6ef;
-  --foreground: #17271f;
-  --card: #fff;
-  --card-foreground: #17271f;
-  --popover: #fff;
-  --popover-foreground: #17271f;
-  --primary: #174936;
+  --background: #f5f2e9;
+  --foreground: #18271f;
+  --card: #fffefa;
+  --card-foreground: #18271f;
+  --popover: #fffefa;
+  --popover-foreground: #18271f;
+  --primary: #214b38;
   --primary-foreground: #fff;
-  --secondary: #eff3e5;
-  --secondary-foreground: #294936;
-  --muted: #eff1e9;
-  --muted-foreground: #65736a;
-  --accent: #eaf3c9;
-  --accent-foreground: #294936;
+  --secondary: #eeeadf;
+  --secondary-foreground: #304c3c;
+  --muted: #efede5;
+  --muted-foreground: #626e64;
+  --accent: #e7edc9;
+  --accent-foreground: #31491f;
   --destructive: #b53d36;
-  --border: #e0e5db;
-  --input: #e0e5db;
-  --ring: #91ae37;
+  --border: #e1ddd1;
+  --input: #dcd9ce;
+  --ring: #9aa64a;
+  --jdm-ink: #18271f;
+  --jdm-evergreen: #214b38;
+  --jdm-olive: #8e9b3f;
+  --jdm-brass: #a88b5c;
+  --jdm-limestone: #f5f2e9;
+  --jdm-paper: #fffefa;
+  --jdm-muted: #657168;
+  --jdm-line: #e1ddd1;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -122,15 +130,55 @@
     @apply border-border outline-ring/50;
   }
   html {
-    background: #f8f8f6;
+    background: var(--jdm-limestone);
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground;
     font-family: 'DM Sans', sans-serif;
+    font-feature-settings: 'ss01' on;
+    -webkit-font-smoothing: antialiased;
+    background-image: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, .68), transparent 60%);
   }
   h1, h2 {
     font-family: 'Newsreader', Georgia, serif;
     text-wrap: balance;
+    letter-spacing: -.035em;
+  }
+  h3, h4 {
+    text-wrap: balance;
+  }
+  ::selection {
+    color: #fffefa;
+    background: #214b38;
+  }
+  a, button, input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid #8e9b3f;
+    outline-offset: 3px;
+  }
+  button:not(:disabled), a {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 180ms;
+    transition-timing-function: ease-out;
+  }
+  input::placeholder, textarea::placeholder {
+    color: #8a9188;
+  }
+  img {
+    background-color: #ebe8de;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  main > section, main > div > section {
+    animation: page-enter .55s both;
+  }
+  @keyframes page-enter {
+    from { opacity: .75; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 

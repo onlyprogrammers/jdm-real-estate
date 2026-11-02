@@ -16,6 +16,10 @@
 3. Enable the PostGIS extension in the provider dashboard first if the database role cannot run `CREATE EXTENSION` itself.
 4. Start the Next.js app. Search and listing endpoints return an explicit unavailable response while `DATABASE_URL` is absent; they do not substitute fake live inventory.
 
+## Admin access
+
+Set `ADMIN_EMAILS` in the server environment to a comma-separated list of administrator sign-in email addresses, for example `ops@example.com,owner@example.com`. The `/api/admin` route checks the signed-in Better Auth email on every dashboard read and listing review; hiding the admin link in the interface is not treated as access control. The admin dashboard reports actual property and contact-event counts and supports approving or rejecting pending submissions. Remove addresses from the setting to revoke access.
+
 The migration assumes the current app's existing tables (`user`, `session`, `account`, `verification`, `properties`, `saved_properties`, and `inquiries`) have already been created. Keep the existing camel-case Better Auth column names intact.
 
 ## External services
