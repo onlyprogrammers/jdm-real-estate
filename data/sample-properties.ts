@@ -22,7 +22,7 @@ export const sampleProperties: SampleProperty[] = [
     type: 'apartment',
     bedrooms: 3,
     area: 1850,
-    images: ['/images/sample-apartment.png'],
+    images: ['/images/sample-apartment.webp'],
     sample: true,
   },
   {
@@ -34,7 +34,7 @@ export const sampleProperties: SampleProperty[] = [
     type: 'builder-floor',
     bedrooms: 4,
     area: 2400,
-    images: ['/images/sample-builder-floor.png'],
+    images: ['/images/sample-builder-floor.webp'],
     sample: true,
   },
   {
@@ -46,7 +46,7 @@ export const sampleProperties: SampleProperty[] = [
     type: 'apartment',
     bedrooms: 2,
     area: 1320,
-    images: ['/images/sample-apartment.png'],
+    images: ['/images/sample-apartment.webp'],
     sample: true,
   },
   {
@@ -58,7 +58,7 @@ export const sampleProperties: SampleProperty[] = [
     type: 'commercial',
     bedrooms: 0,
     area: 1450,
-    images: ['/images/sample-builder-floor.png'],
+    images: ['/images/sample-builder-floor.webp'],
     sample: true,
   },
 ]

@@ -189,3 +189,43 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* A tighter, thumb-friendly layout for phones across every route. */
+@media (max-width: 767px) {
+  html {
+    font-size: 15px;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  main {
+    padding-right: max(14px, env(safe-area-inset-right)) !important;
+    padding-left: max(14px, env(safe-area-inset-left)) !important;
+    padding-bottom: max(72px, calc(58px + env(safe-area-inset-bottom))) !important;
+  }
+
+  main h1 {
+    font-size: clamp(1.7rem, 7.4vw, 2.25rem) !important;
+    line-height: 1.06 !important;
+  }
+
+  main h2 {
+    font-size: clamp(1.3rem, 5.6vw, 1.7rem) !important;
+    line-height: 1.12 !important;
+  }
+
+  main > section:not(:first-of-type) {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  main :is(input, select, textarea) {
+    font-size: 14px;
+  }
+
+  .bottom-nav a {
+    min-height: 44px;
+  }
+}

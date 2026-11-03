@@ -20,8 +20,12 @@ export async function GET(request: Request) {
   const page = Math.max(1, Math.min(500, Number(params.get('page')) || 1))
   const pageSize = Math.max(1, Math.min(40, Number(params.get('pageSize')) || 20))
   const conditions = [eq(properties.status, 'published')]
-  const ids = params.get('ids')?.split(',').filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 40)
-  if (ids?.length) conditions.push(inArray(properties.id, ids))
+  const requestedIds = params.get('ids')
+  const ids = requestedIds?.split(',').filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 40)
+  if (requestedIds !== null) {
+    if (!ids?.length) return NextResponse.json({ properties: [], total: 0, page, pageSize, databaseConfigured: true })
+    conditions.push(inArray(properties.id, ids))
+  }
   if (purpose && ['rent', 'sale', 'pg'].includes(purpose)) conditions.push(eq(properties.purpose, purpose))
   if (type && /^[a-z-]{1,32}$/i.test(type)) conditions.push(eq(properties.type, type))
   if (locality) conditions.push(ilike(properties.locality, `%${locality.slice(0, 80)}%`))

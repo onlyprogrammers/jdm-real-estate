@@ -8,13 +8,15 @@ export const metadata: Metadata = {
     default: 'JDM Real Estate | Property in Gurugram',
     template: '%s | JDM Real Estate',
   },
-  description: 'Discover homes, commercial spaces and property opportunities across Gurugram with local guidance from JDM Real Estate.',
+  description: 'Find a home that fits your life in Gurugram. Explore reviewed listings, compare your options, and get local guidance from JDM Real Estate.',
+  applicationName: 'JDM Real Estate',
+  keywords: ['Gurugram property', 'homes in Gurugram', 'Gurugram rentals', 'property for sale', 'JDM Real Estate'],
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     siteName: 'JDM Real Estate',
     title: 'JDM Real Estate | Property in Gurugram',
-    description: 'Discover homes, commercial spaces and property opportunities across Gurugram with local guidance.',
+    description: 'Find a home that fits your life in Gurugram with reviewed listings and local guidance.',
   },
   icons: {
     icon: [{ url: '/jdm-mark.svg', type: 'image/svg+xml' }],
@@ -24,8 +26,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#f8f8f6',
-  userScalable: false,
+  themeColor: '#f5f2e9',
 }
 
 export default function RootLayout({

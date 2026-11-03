@@ -7,14 +7,20 @@ import {
   ArrowRight,
   Building2,
   Check,
+  BriefcaseBusiness,
   Heart,
+  House,
+  LandPlot,
   MapPin,
   Menu,
+  PanelsTopLeft,
   Search,
   ShieldCheck,
+  Store,
   X,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
+import { Brand } from "@/components/brand";
 import { sampleProperties } from "@/data/sample-properties";
 
 type Listing = {
@@ -34,29 +40,29 @@ const localities = [
   {
     name: "Golf Course Road",
     note: "A considered city address",
-    image: "/images/gurugram-residences.png",
+    image: "/images/gurugram-residences.webp",
     tone: "from-[#706b5f] to-[#343e36]",
   },
   {
     name: "DLF Phase 3",
     note: "Close to the city’s business district",
-    image: "/images/sample-builder-floor.png",
+    image: "/images/sample-builder-floor.webp",
     tone: "from-[#877b68] to-[#3d5145]",
   },
   {
     name: "Dwarka Expressway",
     note: "A growing Gurugram corridor",
-    image: "/images/sample-apartment.png",
+    image: "/images/sample-apartment.webp",
     tone: "from-[#6e7770] to-[#34463c]",
   },
 ];
 const categories = [
-  "Apartments",
-  "Builder floors",
-  "Villas & houses",
-  "Residential plots",
-  "Office spaces",
-  "Retail & commercial",
+  { label: "Apartments", type: "apartment", icon: Building2 },
+  { label: "Builder floors", type: "builder-floor", icon: House },
+  { label: "Villas & houses", type: "villa", icon: PanelsTopLeft },
+  { label: "Residential plots", type: "plot", icon: LandPlot },
+  { label: "Office spaces", type: "commercial", icon: BriefcaseBusiness },
+  { label: "Retail & commercial", type: "commercial", icon: Store },
 ];
 const price = (value: number, purpose: string) =>
   purpose === "rent" || purpose === "pg"
@@ -129,7 +135,7 @@ export function HomeScreen() {
     <main className="min-h-screen bg-[#f7f5ef] text-[#20241f] pb-20 md:pb-0">
       <section className="relative overflow-hidden bg-[#17251f] text-white">
         <img
-          src="/images/gurugram-residences.png"
+          src="/images/gurugram-residences.webp"
           alt=""
           aria-hidden="true"
           className="absolute inset-0 size-full object-cover opacity-45 lg:hidden"
@@ -146,7 +152,7 @@ export function HomeScreen() {
           <div className="absolute bottom-0 right-[4%] h-[56%] w-[22%] border-x border-white/20 bg-white/[.06] [clip-path:polygon(0_10%,84%_0,100%_100%,0_100%)]" />
           <div className="absolute bottom-0 right-[40%] h-[48%] w-[20%] border-x border-white/20 bg-white/[.04] [clip-path:polygon(0_0,100%_16%,100%_100%,0_100%)]" />
         </div>
-        <header className="relative z-10 mx-auto flex max-w-[1320px] items-center justify-between px-3 py-4 sm:px-4 lg:px-10 lg:py-6">
+        <header className="relative z-80 mx-auto flex max-w-[1320px] items-center justify-between px-3 py-4 sm:px-4 lg:px-10 lg:py-6">
           <Link
             href="/"
             className="flex items-center gap-3"
@@ -218,7 +224,7 @@ export function HomeScreen() {
             </nav>
           )}
         </header>
-        <div className="relative mx-auto grid min-h-[400px] max-w-[1320px] items-center px-5 pb-24 pt-8 sm:min-h-[440px] sm:px-8 sm:pb-28 lg:min-h-[540px] lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:pb-32 lg:pt-4">
+        <div className="relative mx-auto grid min-h-[340px] max-w-[1320px] items-center px-4 pb-16 pt-6 sm:min-h-[440px] sm:px-8 sm:pb-28 lg:min-h-[540px] lg:grid-cols-[1.05fr_.95fr] lg:px-10 lg:pb-32 lg:pt-4">
           <div className="relative z-10 max-w-[650px]">
             <p className="mb-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.24em] text-[#e2c99b]">
               <span className="h-px w-7 bg-[#d5bd8e]" />
@@ -234,7 +240,7 @@ export function HomeScreen() {
               Discover homes, commercial spaces and investment opportunities
               across Gurugram with local guidance at every step.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-2.5 sm:mt-8 sm:gap-3">
               <Link
                 href="/search"
               className="inline-flex min-h-12 items-center gap-2 bg-[#d5bd8e] px-5 text-xs font-bold text-[#202b24] shadow-[0_8px_24px_rgba(0,0,0,.16)] hover:bg-[#e4d3b4]"
@@ -251,7 +257,7 @@ export function HomeScreen() {
           </div>
           <div className="hidden justify-end lg:flex">
             <div className="relative mr-10 h-[350px] w-[390px] overflow-hidden border border-white/25 shadow-[0_28px_80px_rgba(0,0,0,.24)]">
-              <img src="/images/gurugram-residences.png" alt="Modern residences surrounded by greenery" fetchPriority="high" className="size-full object-cover" />
+              <img src="/images/gurugram-residences.webp" alt="Modern residences surrounded by greenery" fetchPriority="high" className="size-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#17251f]/65 via-transparent to-transparent" />
               <div className="absolute bottom-0 left-5 border border-[#d5bd8e]/60 bg-[#202d26] px-5 py-4">
                 <p className="text-[9px] uppercase tracking-[.19em] text-[#d5bd8e]">
@@ -324,7 +330,7 @@ export function HomeScreen() {
           </div>
         </div>
       </div>
-      <section className="mx-auto max-w-[1240px] px-4 pt-12 sm:px-8 sm:pt-16 lg:px-10">
+      <section className="mx-auto max-w-[1240px] px-4 pt-8 sm:px-8 sm:pt-16 lg:px-10">
         <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
@@ -341,24 +347,25 @@ export function HomeScreen() {
             All properties <ArrowRight size={15} />
           </Link>
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          {categories.map((category, i) => (
+        <div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {categories.map(({ label, type, icon: CategoryIcon }) => (
             <Link
-              key={category}
-              href={`/search?${new URLSearchParams({ type: ["apartment", "builder-floor", "villa", "plot", "commercial", "commercial"][i] })}`}
-              className="group flex min-h-[100px] flex-col justify-between border border-[#e7e2d7] bg-[#fffefa] p-3 transition duration-200 hover:-translate-y-0.5 hover:border-[#b8a078] hover:shadow-[0_10px_26px_rgba(38,48,38,.08)] sm:min-h-[120px] sm:p-4"
+              key={label}
+              href={`/search?${new URLSearchParams({ type })}`}
+              className="group flex min-h-[88px] flex-col justify-between border border-[#e7e2d7] bg-[#fffefa] p-2.5 transition duration-200 hover:-translate-y-0.5 hover:border-[#b8a078] hover:shadow-[0_10px_26px_rgba(38,48,38,.08)] sm:min-h-[132px] sm:p-4"
             >
-              <span className="flex size-8 items-center justify-center bg-[#f1eee6] text-[#8e744d] transition-colors group-hover:bg-[#e8edd5] group-hover:text-[#40583a]">
-                <Building2 size={16} />
+              <span className="flex size-9 items-center justify-center border border-[#e7e2d7] text-[#8e744d] transition-colors group-hover:border-[#dce4c8] group-hover:bg-[#edf1df] group-hover:text-[#40583a]">
+                <CategoryIcon size={17} strokeWidth={1.6} />
               </span>
-              <span className="text-xs font-semibold leading-5">
-                {category}
+              <span className="flex items-end justify-between gap-1 text-xs font-semibold leading-5">
+                {label}
+                <ArrowRight size={13} className="mb-0.5 shrink-0 text-[#a88b5c] transition-transform group-hover:translate-x-0.5" />
               </span>
             </Link>
           ))}
         </div>
       </section>
-      <section className="mx-auto max-w-[1240px] px-4 pt-12 sm:px-8 sm:pt-16 lg:px-10">
+      <section className="mx-auto max-w-[1240px] px-4 pt-8 sm:px-8 sm:pt-16 lg:px-10">
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
@@ -375,12 +382,12 @@ export function HomeScreen() {
             Explore locations <ArrowRight size={15} />
           </Link>
         </div>
-        <div className="mt-5 flex gap-3 overflow-x-auto sm:grid sm:grid-cols-3">
+        <div className="mt-5 flex gap-3 overflow-x-auto sm:grid sm:auto-rows-fr sm:grid-cols-3 sm:grid-rows-2">
           {localities.map((place, i) => (
             <Link
               href={`/search?q=${encodeURIComponent(place.name)}`}
               key={place.name}
-              className={`group relative min-h-[170px] min-w-[210px] overflow-hidden bg-gradient-to-br ${place.tone} sm:min-h-[280px]`}
+              className={`group relative min-h-[160px] min-w-[210px] overflow-hidden bg-gradient-to-br ${place.tone} sm:min-w-0 ${i === 0 ? "sm:col-span-2 sm:row-span-2 sm:min-h-[360px]" : "sm:min-h-[174px]"}`}
             >
               <img src={place.image} alt={`Representative property image for ${place.name}`} loading="lazy" className="absolute inset-0 size-full object-cover transition duration-500 group-hover:scale-105" />
               <div
@@ -406,7 +413,7 @@ export function HomeScreen() {
           ))}
         </div>
       </section>
-      <section className="mx-auto max-w-[1240px] px-4 pt-12 sm:px-8 sm:pt-16 lg:px-10">
+      <section className="mx-auto max-w-[1240px] px-4 pt-8 sm:px-8 sm:pt-16 lg:px-10">
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
@@ -424,13 +431,13 @@ export function HomeScreen() {
           </Link>
         </div>
         {status === "loading" ? (
-          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-2.5 md:mt-5 md:grid-cols-4 md:gap-3">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="h-64 animate-pulse bg-[#e9e5dc]" />
             ))}
           </div>
         ) : (
-          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-2.5 md:mt-5 md:grid-cols-4 md:gap-3">
             {listings.map((item) => (
               <article
                 key={item.id}
@@ -506,7 +513,7 @@ export function HomeScreen() {
         )}
       </section>
       <section className="mx-auto max-w-[1240px] px-4 pb-12 pt-12 sm:px-8 sm:pb-16 sm:pt-16 lg:px-10">
-        <div className="grid gap-6 bg-[#eae5d9] p-6 sm:grid-cols-[1fr_auto] sm:items-center sm:p-10">
+        <div className="grid gap-4 bg-[#eae5d9] p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-6 sm:p-10">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
               For property owners
@@ -528,16 +535,9 @@ export function HomeScreen() {
           </Link>
         </div>
       </section>
-      <footer className="bg-[#17251f] px-5 py-8 text-white sm:px-8">
-        <div className="mx-auto flex max-w-[1240px] flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold tracking-[.1em]">
-              JDM REAL ESTATE
-            </p>
-            <p className="mt-1 text-xs text-white/55">
-              Your property. Our local expertise.
-            </p>
-          </div>
+      <footer className="bg-[#17251f] px-4 py-5 text-white sm:px-8 sm:py-8">
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+          <div><Brand compact inverse/><p className="mt-1 text-[11px] text-white/55 sm:text-xs">Your property. Our local expertise.</p></div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/70">
             <Link href="/search">Explore</Link>
             <Link href="/post">List property</Link>

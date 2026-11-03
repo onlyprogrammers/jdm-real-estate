@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const event = ['whatsapp_click', 'call_click', 'inquiry'].includes(body?.event) ? body.event : ''
   if (!propertyId || !event) return NextResponse.json({ error: 'A listing and contact action are required.' }, { status: 400 })
   try {
-    const [listing] = await db.select({ id: properties.id }).from(properties).where(eq(properties.id, propertyId)).limit(1)
+    const [listing] = await db.select({ id: properties.id }).from(properties).where(and(eq(properties.id, propertyId), eq(properties.status, 'published'))).limit(1)
     if (!listing) return NextResponse.json({ error: 'Listing not found.' }, { status: 404 })
     let userId: string | undefined
     try { userId = (await auth.api.getSession({ headers: await headers() }))?.user?.id } catch { /* Anonymous viewing is supported. */ }
