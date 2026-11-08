@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { Brand } from "@/components/brand";
-import { sampleProperties } from "@/data/sample-properties";
 
 type Listing = {
   id: string;
@@ -34,7 +33,6 @@ type Listing = {
   area?: number | null;
   images?: string[] | null;
   verifiedAt?: string | null;
-  sample?: boolean;
 };
 const localities = [
   {
@@ -76,9 +74,7 @@ export function HomeScreen() {
   const [propertyType, setPropertyType] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [status, setStatus] = useState<
-    "loading" | "ready" | "sample"
-  >("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "empty" | "error">("loading");
   const [saved, setSaved] = useState<string[]>([]);
 
   useEffect(() => {
@@ -86,18 +82,16 @@ export function HomeScreen() {
     fetch("/api/properties?page=1&pageSize=4")
       .then(async (response) => {
         const data = await response.json();
+        if (!response.ok) throw new Error(data.error || data.message || "Could not load live properties.");
         if (!active) return;
         const live = Array.isArray(data.properties)
           ? (data.properties as Listing[])
           : [];
-        setListings(live.length ? live : sampleProperties);
-        setStatus(live.length ? "ready" : "sample");
+        setListings(live);
+        setStatus(live.length ? "ready" : "empty");
       })
       .catch(() => {
-        if (active) {
-          setListings(sampleProperties);
-          setStatus("sample");
-        }
+        if (active) setStatus("error");
       });
     const sync = () => {
       try {
@@ -417,7 +411,7 @@ export function HomeScreen() {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#967a4e]">
-              {status === "sample" ? "Example listings" : "Recently listed"}
+              "Recently listed"
             </p>
             <h2 className="mt-2 font-serif text-3xl font-medium tracking-[-.025em] sm:text-4xl">
               Properties to consider
@@ -436,7 +430,7 @@ export function HomeScreen() {
               <div key={i} className="h-64 animate-pulse bg-[#e9e5dc]" />
             ))}
           </div>
-        ) : (
+        ) : listings.length ? (
           <div className="mt-4 grid grid-cols-2 gap-2.5 md:mt-5 md:grid-cols-4 md:gap-3">
             {listings.map((item) => (
               <article
@@ -459,9 +453,7 @@ export function HomeScreen() {
                       <Building2 size={34} />
                     </div>
                   )}
-                  {item.sample ? (
-                    <span className="absolute left-2 top-2 bg-[#fffefa]/95 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-[#6b5636]">Example · not live</span>
-                  ) : item.verifiedAt && (
+                  {item.verifiedAt && (
                     <span className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/95 px-2 py-1 text-[9px] font-bold text-[#405848]">
                       <Check size={12} />
                       Reviewed
@@ -477,12 +469,11 @@ export function HomeScreen() {
                       {item.title}
                     </Link>
                     <button
-                      disabled={item.sample}
                       onClick={() => toggleSaved(item.id)}
                       aria-label={
                         saved.includes(item.id)
                           ? "Remove saved property"
-                          : item.sample ? "Example listing cannot be saved" : "Save property"
+                          : "Save property"
                       }
                       aria-pressed={saved.includes(item.id)}
                       className="flex size-7 shrink-0 items-center justify-center text-[#7f735f] disabled:opacity-35"
@@ -510,7 +501,12 @@ export function HomeScreen() {
               </article>
             ))}
           </div>
-        )}
+        ) : <div className="mt-4 border border-[#e7e2d7] bg-[#fffefa] px-5 py-8 text-center sm:py-10">
+          <Building2 className="mx-auto text-[#8a967f]" size={24} />
+          <p className="mt-3 text-sm font-semibold">{status === "error" ? "Live properties are temporarily unavailable." : "No properties have been published yet."}</p>
+          <p className="mt-1 text-xs text-[#788078]">{status === "error" ? "Please try the live search again in a moment." : "New listings appear here after the JDM team reviews and approves them."}</p>
+          <Link href="/search" className="mt-4 inline-flex min-h-10 items-center gap-2 bg-[#214b38] px-4 text-xs font-bold text-white">Browse live listings <ArrowRight size={14} /></Link>
+        </div>}
       </section>
       <section className="mx-auto max-w-[1240px] px-4 pb-12 pt-12 sm:px-8 sm:pb-16 sm:pt-16 lg:px-10">
         <div className="grid gap-4 bg-[#eae5d9] p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-6 sm:p-10">

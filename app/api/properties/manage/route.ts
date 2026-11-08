@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
@@ -16,6 +16,19 @@ async function currentUserId() {
 }
 
 const clean = (value: unknown, max = 180) => typeof value === 'string' ? value.trim().slice(0, max) : ''
+
+export async function GET() {
+  if (!databaseConfigured) return NextResponse.json({ error: 'Listing storage is not configured.' }, { status: 503 })
+  const ownerId = await currentUserId()
+  if (!ownerId) return NextResponse.json({ error: 'Sign in to view your listings.' }, { status: 401 })
+  try {
+    const listings = await db.select().from(properties).where(eq(properties.ownerId, ownerId)).orderBy(desc(properties.updatedAt)).limit(100)
+    return NextResponse.json({ properties: listings })
+  } catch (error) {
+    console.error('Owner listings failed to load', error)
+    return NextResponse.json({ error: 'Could not load your listings.' }, { status: 503 })
+  }
+}
 
 export async function POST(request: Request) {
   if (!databaseConfigured) return NextResponse.json({ error: 'Listing storage is not configured. Add DATABASE_URL and apply the marketplace migration.' }, { status: 503 })
@@ -71,6 +84,31 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  if (!databaseConfigured) return NextResponse.json({ error: 'Listing storage is not configured.' }, { status: 503 })
+  const ownerId = await currentUserId()
+  if (!ownerId) return NextResponse.json({ error: 'Sign in to manage listings.' }, { status: 401 })
+  const body = await request.json().catch(() => null)
+  const id = typeof body?.id === 'string' ? body.id.slice(0, 80) : ''
+  const status = ['sold', 'hidden', 'published'].includes(body?.status) ? body.status as 'sold' | 'hidden' | 'published' : ''
+  if (!id || !status) return NextResponse.json({ error: 'Choose a property and valid status.' }, { status: 400 })
+  try {
+    const [current] = await db.select().from(properties).where(and(eq(properties.id, id), eq(properties.ownerId, ownerId))).limit(1)
+    if (!current || current.status === 'removed') return NextResponse.json({ error: 'Property not found.' }, { status: 404 })
+    const allowed = status === 'hidden'
+      ? current.status === 'published'
+      : status === 'sold'
+        ? current.status === 'published'
+        : ['hidden', 'sold'].includes(current.status) && Boolean(current.verifiedAt)
+    if (!allowed) return NextResponse.json({ error: 'This property cannot move to that status.' }, { status: 409 })
+    const [property] = await db.update(properties).set({ status, updatedAt: new Date() }).where(and(eq(properties.id, id), eq(properties.ownerId, ownerId))).returning()
+    return NextResponse.json({ property })
+  } catch (error) {
+    console.error('Owner listing status update failed', error)
+    return NextResponse.json({ error: 'Could not update this listing.' }, { status: 503 })
+  }
+}
+
 export async function DELETE(request: Request) {
   if (!databaseConfigured) return NextResponse.json({ error: 'Listing storage is not configured.' }, { status: 503 })
   const ownerId = await currentUserId()
@@ -78,8 +116,9 @@ export async function DELETE(request: Request) {
   const id = new URL(request.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'Missing listing id.' }, { status: 400 })
   try {
-    await db.delete(properties).where(and(eq(properties.id, id), eq(properties.ownerId, ownerId)))
-    return NextResponse.json({ ok: true })
+    const [property] = await db.update(properties).set({ status: 'removed', updatedAt: new Date() }).where(and(eq(properties.id, id), eq(properties.ownerId, ownerId), inArray(properties.status, ['pending_verification', 'published', 'rejected', 'hidden', 'sold']))).returning()
+    if (!property) return NextResponse.json({ error: 'Property not found or already removed.' }, { status: 404 })
+    return NextResponse.json({ property })
   } catch (error) {
     console.error('Property removal failed', error)
     return NextResponse.json({ error: 'Could not remove this listing.' }, { status: 503 })
